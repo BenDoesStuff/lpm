@@ -1,4 +1,4 @@
-# lpm
+# LPM
 
 Local Password Manager
 
@@ -45,5 +45,3 @@ cd dist
 hdiutil create -volname LPM -srcfolder . -ov -format UDZO ../LPM.dmg
 ```
 
-The resulting `LPM.dmg` can be distributed to other macOS users. They simply
-open the disk image and copy `LPM` to `/Applications`.
