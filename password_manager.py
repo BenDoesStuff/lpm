@@ -3,6 +3,8 @@ import json
 import base64
 import tkinter as tk
 from tkinter import simpledialog, messagebox
+import string
+import secrets
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -11,6 +13,12 @@ import pyperclip
 
 SALT_FILE = "salt.bin"
 DATA_FILE = "vault.enc"
+
+
+def generate_password(length: int = 16) -> str:
+    """Return a random password of the given length."""
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def derive_key(password: str, salt: bytes) -> bytes:
@@ -62,27 +70,41 @@ def setup_master_password() -> str:
         "Set Master Password",
         "Initial setup: please create a master password.",
     )
-    while True:
-        pwd1 = simpledialog.askstring(
-            "Set Master Password",
-            "Create master password:",
-            show="*",
-        )
-        if pwd1 is None:
-            root.destroy()
-            raise SystemExit
-        pwd2 = simpledialog.askstring(
-            "Set Master Password",
-            "Confirm master password:",
-            show="*",
-        )
-        if pwd2 is None:
-            root.destroy()
-            raise SystemExit
-        if pwd1 and pwd1 == pwd2:
-            root.destroy()
-            return pwd1
-        messagebox.showerror("Error", "Passwords do not match or are empty.")
+
+    dialog = tk.Toplevel(root)
+    dialog.title("Set Master Password")
+    tk.Label(dialog, text="Master password:").grid(row=0, column=0, padx=5, pady=5)
+    tk.Label(dialog, text="Confirm password:").grid(row=1, column=0, padx=5, pady=5)
+
+    pwd_var = tk.StringVar()
+    confirm_var = tk.StringVar()
+    tk.Entry(dialog, textvariable=pwd_var, show="*").grid(row=0, column=1, padx=5, pady=5)
+    tk.Entry(dialog, textvariable=confirm_var, show="*").grid(row=1, column=1, padx=5, pady=5)
+
+    def fill_generated() -> None:
+        pw = generate_password()
+        pwd_var.set(pw)
+        confirm_var.set(pw)
+
+    def on_ok() -> None:
+        p1 = pwd_var.get()
+        p2 = confirm_var.get()
+        if p1 and p1 == p2:
+            dialog.destroy()
+        else:
+            messagebox.showerror("Error", "Passwords do not match or are empty.")
+
+    tk.Button(dialog, text="Generate", command=fill_generated).grid(row=2, column=0, padx=5, pady=5)
+    tk.Button(dialog, text="OK", command=on_ok).grid(row=2, column=1, padx=5, pady=5)
+
+    dialog.grab_set()
+    root.wait_window(dialog)
+    password = pwd_var.get()
+    if not password:
+        root.destroy()
+        raise SystemExit
+    root.destroy()
+    return password
 
 
 def get_or_create_salt() -> bytes:
@@ -106,6 +128,9 @@ def add_entry(vault: dict, listbox: tk.Listbox) -> None:
     tk.Entry(dialog, textvariable=service_var).grid(row=0, column=1, padx=5, pady=5)
     tk.Entry(dialog, textvariable=password_var, show="*").grid(row=1, column=1, padx=5, pady=5)
 
+    def fill_generated() -> None:
+        password_var.set(generate_password())
+
     def on_ok():
         service = service_var.get().strip()
         password = password_var.get()
@@ -114,7 +139,8 @@ def add_entry(vault: dict, listbox: tk.Listbox) -> None:
             listbox.insert(tk.END, service)
         dialog.destroy()
 
-    tk.Button(dialog, text="OK", command=on_ok).grid(row=2, column=0, columnspan=2, pady=5)
+    tk.Button(dialog, text="Generate", command=fill_generated).grid(row=2, column=0, padx=5, pady=5)
+    tk.Button(dialog, text="OK", command=on_ok).grid(row=2, column=1, padx=5, pady=5)
     dialog.grab_set()
     dialog.wait_window()
 
@@ -140,44 +166,3 @@ def delete_entry(vault: dict, listbox: tk.Listbox) -> None:
 
 def main() -> None:
     first_run = not (os.path.exists(DATA_FILE) and os.path.exists(SALT_FILE))
-
-    if first_run:
-        password = setup_master_password()
-        salt = get_or_create_salt()
-        key = derive_key(password, salt)
-        fernet = Fernet(key)
-        vault = {}
-        save_vault(fernet, vault)
-    else:
-        password = prompt_master_password()
-        salt = get_or_create_salt()
-        key = derive_key(password, salt)
-        fernet = Fernet(key)
-        vault = load_vault(fernet)
-
-    root = tk.Tk()
-    root.title("LPM")
-
-    listbox = tk.Listbox(root, width=40)
-    listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
-    for service in vault:
-        listbox.insert(tk.END, service)
-
-    button_frame = tk.Frame(root)
-    button_frame.pack(pady=5)
-
-    tk.Button(button_frame, text="Add", command=lambda: add_entry(vault, listbox)).grid(row=0, column=0, padx=5)
-    tk.Button(button_frame, text="Copy", command=lambda: copy_password(vault, listbox)).grid(row=0, column=1, padx=5)
-    tk.Button(button_frame, text="Delete", command=lambda: delete_entry(vault, listbox)).grid(row=0, column=2, padx=5)
-
-    def on_close():
-        save_vault(fernet, vault)
-        root.destroy()
-
-    root.protocol("WM_DELETE_WINDOW", on_close)
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    main()

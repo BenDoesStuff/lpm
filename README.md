@@ -1,4 +1,4 @@
-# lpm
+# LPM
 
 Local Password Manager
 
@@ -18,6 +18,8 @@ python password_manager.py
 
 On first run, you'll be prompted to create a master password. This password will
 be required each time you open the manager.
+Both the master password setup and the "Add Entry" dialog include a "Generate"
+button that creates a strong random password for convenience.
 
 ## Packaging as a single executable
 
@@ -43,5 +45,3 @@ cd dist
 hdiutil create -volname LPM -srcfolder . -ov -format UDZO ../LPM.dmg
 ```
 
-The resulting `LPM.dmg` can be distributed to other macOS users. They simply
-open the disk image and copy `LPM` to `/Applications`.
