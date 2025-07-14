@@ -14,4 +14,4 @@ Run the application:
 
 ```bash
 python password_manager.py
-```
+
