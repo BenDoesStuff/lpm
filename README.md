@@ -1,3 +1,5 @@
+# lpm
+
 Local Password Manager
 
 ## Setup
@@ -28,3 +30,18 @@ pyinstaller --onefile --name LPM password_manager.py
 
 The executable will be placed in the `dist` directory. Run the command on
 Windows to generate `LPM.exe`, and on macOS to generate `LPM`.
+
+### Creating a macOS installer
+
+After building the single-file executable on a Mac, you can package it into a
+disk image (`.dmg`) so users can drag it to their Applications folder:
+
+```bash
+# run on macOS
+pyinstaller --onefile --name LPM password_manager.py
+cd dist
+hdiutil create -volname LPM -srcfolder . -ov -format UDZO ../LPM.dmg
+```
+
+The resulting `LPM.dmg` can be distributed to other macOS users. They simply
+open the disk image and copy `LPM` to `/Applications`.
