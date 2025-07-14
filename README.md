@@ -1,5 +1,3 @@
-# lpm
-
 Local Password Manager
 
 ## Setup
