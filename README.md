@@ -12,9 +12,7 @@ pip install -r requirements.txt
 
 Run the application:
 
-```bash
-python password_manager.py
-```
+
 
 On first run, you'll be prompted to create a master password. This password will
 be required each time you open the manager.
@@ -23,10 +21,9 @@ be required each time you open the manager.
 
 Install PyInstaller and create an executable:
 
-```bash
-pip install pyinstaller
-pyinstaller --onefile --name LPM password_manager.py
-```
 
 The executable will be placed in the `dist` directory. Run the command on
 Windows to generate `LPM.exe`, and on macOS to generate `LPM`.
+=======
+
+
