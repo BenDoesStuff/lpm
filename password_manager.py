@@ -15,6 +15,17 @@ SALT_FILE = "salt.bin"
 DATA_FILE = "vault.enc"
 
 
+def ensure_gui() -> None:
+    """Exit if Tkinter cannot access a display."""
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        root.destroy()
+    except tk.TclError as exc:
+        print("Error: Tkinter could not open a window. Is a graphical environment available?")
+        raise SystemExit(1) from exc
+
+
 def generate_password(length: int = 16) -> str:
     """Return a random password of the given length."""
     alphabet = string.ascii_letters + string.digits + string.punctuation
@@ -165,4 +176,46 @@ def delete_entry(vault: dict, listbox: tk.Listbox) -> None:
 
 
 def main() -> None:
+    ensure_gui()
     first_run = not (os.path.exists(DATA_FILE) and os.path.exists(SALT_FILE))
+
+    if first_run:
+        password = setup_master_password()
+        salt = get_or_create_salt()
+        key = derive_key(password, salt)
+        fernet = Fernet(key)
+        vault = {}
+        save_vault(fernet, vault)
+    else:
+        password = prompt_master_password()
+        salt = get_or_create_salt()
+        key = derive_key(password, salt)
+        fernet = Fernet(key)
+        vault = load_vault(fernet)
+
+    root = tk.Tk()
+    root.title("LPM")
+
+    listbox = tk.Listbox(root, width=40)
+    listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    for service in vault:
+        listbox.insert(tk.END, service)
+
+    button_frame = tk.Frame(root)
+    button_frame.pack(pady=5)
+
+    tk.Button(button_frame, text="Add", command=lambda: add_entry(vault, listbox)).grid(row=0, column=0, padx=5)
+    tk.Button(button_frame, text="Copy", command=lambda: copy_password(vault, listbox)).grid(row=0, column=1, padx=5)
+    tk.Button(button_frame, text="Delete", command=lambda: delete_entry(vault, listbox)).grid(row=0, column=2, padx=5)
+
+    def on_close():
+        save_vault(fernet, vault)
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

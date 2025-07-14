@@ -1,4 +1,4 @@
-# LPM
+# lpm
 
 Local Password Manager
 
@@ -10,7 +10,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Run the application:
+Run the application (requires a graphical desktop environment):
 
 ```bash
 python password_manager.py
@@ -23,7 +23,7 @@ button that creates a strong random password for convenience.
 
 ## Packaging as a single executable
 
-Install PyInstaller and create an executable:
+Install PyInstaller (and ensure dependencies from `requirements.txt` are installed) then create an executable:
 
 ```bash
 pip install pyinstaller
@@ -45,3 +45,5 @@ cd dist
 hdiutil create -volname LPM -srcfolder . -ov -format UDZO ../LPM.dmg
 ```
 
+The resulting `LPM.dmg` can be distributed to other macOS users. They simply
+open the disk image and copy `LPM` to `/Applications`.
