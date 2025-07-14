@@ -54,6 +54,25 @@ def prompt_master_password() -> str:
     return pwd
 
 
+def setup_master_password() -> str:
+    """Prompt the user to create an initial master password."""
+    root = tk.Tk()
+    root.withdraw()
+    while True:
+        pwd1 = simpledialog.askstring("Setup", "Create master password:", show="*")
+        if pwd1 is None:
+            root.destroy()
+            raise SystemExit
+        pwd2 = simpledialog.askstring("Setup", "Confirm master password:", show="*")
+        if pwd2 is None:
+            root.destroy()
+            raise SystemExit
+        if pwd1 and pwd1 == pwd2:
+            root.destroy()
+            return pwd1
+        messagebox.showerror("Error", "Passwords do not match or are empty.")
+
+
 def get_or_create_salt() -> bytes:
     if os.path.exists(SALT_FILE):
         with open(SALT_FILE, "rb") as f:
@@ -108,12 +127,21 @@ def delete_entry(vault: dict, listbox: tk.Listbox) -> None:
 
 
 def main() -> None:
-    password = prompt_master_password()
-    salt = get_or_create_salt()
-    key = derive_key(password, salt)
-    fernet = Fernet(key)
+    first_run = not (os.path.exists(DATA_FILE) and os.path.exists(SALT_FILE))
 
-    vault = load_vault(fernet)
+    if first_run:
+        password = setup_master_password()
+        salt = get_or_create_salt()
+        key = derive_key(password, salt)
+        fernet = Fernet(key)
+        vault = {}
+        save_vault(fernet, vault)
+    else:
+        password = prompt_master_password()
+        salt = get_or_create_salt()
+        key = derive_key(password, salt)
+        fernet = Fernet(key)
+        vault = load_vault(fernet)
 
     root = tk.Tk()
     root.title("Local Password Manager")
